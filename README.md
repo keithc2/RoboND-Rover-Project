@@ -54,9 +54,26 @@ Writeup
 0. Screen Resolution and Quality
   1152 x 720 with Good Quality
 
-1. Description of perception_step()
-  Given an image from the Rover (front) I created a source matrix and a destination matrix and warped it to a top-down view, using the getPerspectiveTransform() function. I then applied a color threshold for the obstacles that the Rover would come across, the rock samples it was tasked to find and the navigable terrain that is available. After, I updated the world map and plotted live information of what the rover saw - what it considered terrain, obstacles etc... Finally I updated Rover.nav_angles and Rover.nav_dists according to the image provided and repeated with the next image.
+1. Description of perception_step()   ---rewrite with more details
+  Q1: Which functions are used for what reason?
+  Q2: What is the order of steps that you are taking?
+  Q3: Where are the functions located in .py file?
+  I initialized a size for destination and created a bottom_offset. I then created a copy of the image that the rover sees (Rover.img) for manipulation.
+  I defined a source to get the transformation started based off of the image from the rover perspective. It defines, roughly four corners of a grid, not shown.
+  As for the destination, I used the image.shape - where image is a copy of what the rover is currently seeing via the front camera - to give the coordinates of the desired location after the perspective transformation.
+  The perspect_transform function used getPerspectiveTransform to create a matrix, M, then uses that to warp the perspective to a top-down view.
+  For task number 3 in perception_step() I created a color threshold for three factors, the navigable terrain, the obstacles and the rock samples. I did this by calling the color_thresh function with two variables - this color thresh will be explained in greated detail later. This created a filter of colors so that the Rover could distinguish what it could, and couldn't, travel on as well as distinguish valuable rock samples for its grand mission.
+  The next task desired for a current mapping of what the rover could see in that given instant, so I did as such by updating the vision_image of the Rover and displayed it using the color threshold created previously. In the instance of the terrain, I multiplied the outcome by 255 so that it was visible on the image displayed.
+  The next step was to find out where the rover was in the world. This required two steps and the functions rover_coords() and pix_to_world(). First I used the color threshold and called the rover_coords() function to extract pixel coordinates with the rover being at the bottom center of the warped image (top-down) then used the Rover position (Rover_pos), the yaw value of the Rover (Rover.yaw), the world map and a scale factor to call the pix_to_world() function.
+  The pix_to_world() function utilized the rotate_pix() and translate_pix() to convert where the Rover.pos was vs the world (x, y) and scaled the Rover.pos to match the world. Finally I updated the map, which was displayed at the bottom right corner of the simulation.
+  To conclude the perception_step() I updated the Rover pixel distance and angles by using the to_polar_coords(). The distance was calculated simply by the Pythagorean theorem and the angles by the arctan(x, y) where (x,y) are the coordinates of the Rover via the world map after conversion.
+  The order of the functions for perception.py is as follows: color_thresh(), rover_coords(), to_polar_coords(), rotate_pix(), translate_pix(), pix_to_world(), perspect_transform() and finally perception_step().
 
 2. Description of decision_step()
-  I added an extra condition where it compares the length of Rover.nav_dists and Rover.stop_forward and if len(Rover.nav_dists) >=, the steer with an average between -15 & 15 degrees.
-  I also check if the rover throttle is 0.2 & Rover.vel is 0 - the rover is stuck on a rock - then brake and turn -15 degrees.
+  Q1: Which functions are used for what reason?
+  Q2: What is the order of steps that you are taking?
+  Q3: Where are the functions located in .py file?
+  If the rover sees enough to make a decision (1), its in forward mode (2), if the options to move - via the angles - is above the threshold to decide to stop (3) and if the rover is not at the max speed, then accelerate without steering. If conditions 1, 2, and 3 are met but the rover is at its max velocity, the set the acceleration to 0 and let the rover coast. Also, if 1, 2, and 3 are met and the number of options to move - via distances - is above the threshold to stop, then steer the rover on average with limits of -15 degrees and 15 degrees. Finally, if for some reason the rover is accelerating but the rover velocity is still zero - simulating it is stuck on a rock - then stop accelerating, hit the brakes and turn -15 degrees.
+
+3. color_thresh()
+  For color_thresh() I removed the value of rgb_thresh because I wanted different values of that variable depending on if I were looking at terrain, obstacles or rock samples. I figured that rgb_thresh=(160, 160, 160) was enough to allow the rover to see the navigable terrain. Similarly rgb_thresh=(100, 100, 100) to distinguish obstacles. Finally, knowing that the rock samples it wanted to find where yellow, I allowed rgb_thresh=(200, 200, 0) to have a solid yellow color it was looking for.
